@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>September 2026 Hiking Trip</title>
+  <style>
+    :root {
+      --green: #3a5a40;
+      --green-light: #588157;
+      --green-pale: #a3b18a;
+      --cream: #f8f4ef;
+      --brown: #7c5c3e;
+      --orange: #d4622a;
+      --tbd: #b5451b;
+      --done: #3a5a40;
+      --card-bg: #ffffff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.10);
+      --border: #dde5d0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--cream);
+      color: #2d2d2d;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--green);
+      color: white;
+      padding: 2rem 2rem 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: 1px;
+      margin-bottom: 0.3rem;
+    }
+    header p {
+      font-size: 1rem;
+      color: var(--green-pale);
+      font-style: italic;
+    }
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      padding: 0.8rem 2rem;
+      background: var(--green-light);
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: white;
+      font-size: 0.85rem;
+    }
+    .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-booked { background: #52b788; }
+    .dot-trail { background: #74c69d; }
+    .dot-tbd { background: #f4a261; }
+    .dot-pending { background: #e9c46a; }
+
+    .timeline {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem 3rem;
+    }
+
+    .day-card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.2rem;
+      border-left: 6px solid var(--green-pale);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .day-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); }
+    .day-card.booked { border-left-color: #52b788; }
+    .day-card.trail { border-left-color: #74c69d; }
+    .day-card.tbd { border-left-color: #f4a261; }
+    .day-card.pending { border-left-color: #e9c46a; }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.2rem 0.7rem;
+      cursor: pointer;
+      user-select: none;
+      background: #f9fbf7;
+      border-bottom: 1px solid var(--border);
+    }
+    .day-header:hover { background: #f0f5eb; }
+    .day-label {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .day-number {
+      background: var(--green);
+      color: white;
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .day-title { font-size: 1.05rem; font-weight: bold; color: var(--green); }
+    .day-date { font-size: 0.85rem; color: #777; margin-top: 1px; font-style: italic; }
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.7rem;
+      border-radius: 20px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-booked { background: #d8f3dc; color: #1b4332; }
+    .badge-trail { background: #d8f3dc; color: #1b4332; }
+    .badge-tbd { background: #ffe8d6; color: #7f3c0c; }
+    .badge-pending { background: #fff3cd; color: #7a5c00; }
+
+    .chevron {
+      font-size: 1rem;
+      color: #aaa;
+      margin-left: 0.7rem;
+      transition: transform 0.2s;
+    }
+    .day-card.open .chevron { transform: rotate(180deg); }
+
+    .day-body {
+      display: none;
+      padding: 1rem 1.4rem 1.2rem;
+    }
+    .day-card.open .day-body { display: block; }
+
+    .section { margin-bottom: 0.9rem; }
+    .section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--green-light);
+      font-family: sans-serif;
+      margin-bottom: 0.3rem;
+      font-weight: bold;
+    }
+    .section-content {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #333;
+    }
+    .section-content a {
+      color: var(--green-light);
+      text-decoration: none;
+    }
+    .section-content a:hover { text-decoration: underline; }
+
+    .tbd-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #fff3e0;
+      border: 1px solid #f4a261;
+      color: #7f3c0c;
+      border-radius: 5px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.85rem;
+      margin: 0.15rem 0;
+    }
+    .confirmed-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #d8f3dc;
+      border: 1px solid #74c69d;
+      color: #1b4332;
+      border-radius: 5px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.85rem;
+      margin: 0.15rem 0;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1.2rem;
+      font-size: 0.92rem;
+    }
+    .info-grid .label { color: #888; font-size: 0.82rem; font-family: sans-serif; }
+    .info-grid .value { color: #222; }
+
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #e9c46a;
+      border-radius: 5px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.88rem;
+      color: #5a4000;
+      margin-top: 0.5rem;
+    }
+    .note-box {
+      background: #eaf4fb;
+      border-left: 4px solid #90caf9;
+      border-radius: 5px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.88rem;
+      color: #1a3a4a;
+      margin-top: 0.5rem;
+    }
+
+    .checklist-section {
+      max-width: 860px;
+      margin: 0 auto 3rem;
+      padding: 0 1rem;
+    }
+    .checklist-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 1.4rem 1.6rem;
+    }
+    .checklist-card h2 {
+      color: var(--green);
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .checklist-group { margin-bottom: 1rem; }
+    .checklist-group h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--green-light);
+      font-family: sans-serif;
+      margin-bottom: 0.5rem;
+    }
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.93rem;
+      line-height: 1.5;
+    }
+    .checklist-item input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: var(--green);
+      width: 15px; height: 15px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .checklist-item label { cursor: pointer; }
+    .checklist-item input:checked + label {
+      text-decoration: line-through;
+      color: #aaa;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #aaa;
+      font-size: 0.8rem;
+      font-family: sans-serif;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.4rem; }
+      .info-grid { grid-template-columns: 1fr; }
+      .day-title { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏔️ September 2026 Hiking Trip</h1>
+  <p>Grayson Highlands · Shining Rock · Panthertown Valley</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><span class="dot dot-booked"></span> Booked & Confirmed</div>
+  <div class="legend-item"><span class="dot dot-trail"></span> On Trail (no booking needed)</div>
+  <div class="legend-item"><span class="dot dot-tbd"></span> Needs Attention</div>
+  <div class="legend-item"><span class="dot dot-pending"></span> Pending Decision</div>
+</div>
+
+<div class="timeline">
+
+  <!-- DAY 1 -->
+  <div class="day-card booked" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">1</div>
+        <div>
+          <div class="day-title">Drive Up · Supplies · Creeper Trail Campground</div>
+          <div class="day-date">Saturday, September 12, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-booked">✓ Booked</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Overnight</div>
+        <div class="section-content">
+          <strong>Creeper Trail Campground</strong><br>
+          2248 Whitetop Gap Rd, Whitetop, VA 24292<br>
+          <span class="confirmed-item">✓ Reserved & Confirmed</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Plan</div>
+        <div class="section-content">
+          Drive up from Lexington, GA. Pick up supplies en route. Settle in at camp. Grayson Highlands trailhead is ~7 miles away.
+        </div>
+      </div>
+      <div class="note-box">☕ Creeper Trail Campground has an on-site café (Achy Bum Café) open weekends — breakfast Sat/Sun 7–11 AM, pizza Saturday evenings. Note: café closed in 2026 while Chef Juno attends culinary school.</div>
+    </div>
+  </div>
+
+  <!-- DAY 2 -->
+  <div class="day-card trail" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">2</div>
+        <div>
+          <div class="day-title">Grayson Highlands Loop — Night 1 On Trail</div>
+          <div class="day-date">Sunday, September 13, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-tbd">⚠ Needs Planning</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Parking</div>
+        <div class="section-content">
+          <strong>Massie Gap Overnight Backpacker's Lot</strong> — Grayson Highlands State Park<br>
+          <span class="confirmed-item">✓ Reserved: Sept 13–15 (2 nights)</span><br>
+          Check-in: 1:00 PM — plan for an early-afternoon start on trail.
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Hike</div>
+        <div class="section-content">
+          <strong>Mount Rogers Loop Trail</strong> — 19.7 miles total, rated Hard<br>
+          <a href="https://www.alltrails.com/explore/trail/us/virginia/mount-rogers-loop-trail" target="_blank">AllTrails Link ↗</a><br><br>
+          <span class="tbd-item">⚠ Daily mileage breakdown TBD</span><br>
+          <span class="tbd-item">⚠ Night 1 campsite location TBD</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Key Rules</div>
+        <div class="section-content">
+          • Must camp on USFS land (past park boundary — ~1.5 mi southbound on AT)<br>
+          • No campfires within ¼ mile of AT between Massie Gap and VA-601 (through April 2027)<br>
+          • Stove only
+        </div>
+      </div>
+      <div class="warning-box">⚠ Entrance fee (~$10 Sunday rate) may be due at gate — TBD whether parking reservation covers it. Call (276) 579-7092 to confirm.</div>
+    </div>
+  </div>
+
+  <!-- DAY 3 -->
+  <div class="day-card trail" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">3</div>
+        <div>
+          <div class="day-title">Grayson Highlands Loop — Night 2 On Trail</div>
+          <div class="day-date">Monday, September 14, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-tbd">⚠ Needs Planning</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Overnight</div>
+        <div class="section-content">
+          On trail — USFS land, Mount Rogers NRA<br>
+          <span class="tbd-item">⚠ Night 2 campsite location TBD</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Notes</div>
+        <div class="section-content">
+          No cell service in this area — download offline maps before leaving. Recommended: Avenza app with free Grayson Highlands map, or National Geographic Trails Illustrated Map #318.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 4 -->
+  <div class="day-card booked" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">4</div>
+        <div>
+          <div class="day-title">Finish Loop · Drive to Pisgah · Sunburst Campground</div>
+          <div class="day-date">Tuesday, September 15, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-booked">✓ Booked</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Morning</div>
+        <div class="section-content">
+          Hike out to Massie Gap. Pick up vehicle. Drive south to Pisgah National Forest area (~3–4 hrs).
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Overnight</div>
+        <div class="section-content">
+          <strong>Sunburst Campground, Site 4</strong><br>
+          8820 Lake Logan Rd, Canton, NC 28716<br>
+          NC-215, Pisgah National Forest<br>
+          <span class="confirmed-item">✓ Reserved: Sept 15 (1 night)</span><br>
+          Check-in: 2:00 PM · Check-out: 12:00 PM<br>
+          📞 (828) 577-4910
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Next Morning</div>
+        <div class="section-content">
+          Drive ~20–25 min up to Blue Ridge Parkway MP 420.2, turn onto Black Balsam Rd (FSR 816), drive ~1.5 miles to Art Loeb Trailhead. Arrive early — lot is small (15–20 cars) but weekday traffic is light.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 5 -->
+  <div class="day-card trail" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">5</div>
+        <div>
+          <div class="day-title">Shining Rock Loop — Night 1 On Trail</div>
+          <div class="day-date">Wednesday, September 16, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-tbd">⚠ Needs Planning</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Trailhead</div>
+        <div class="section-content">
+          <strong>Art Loeb Trailhead</strong> — Black Balsam Rd (FSR 816), Blue Ridge Parkway MP 420.2<br>
+          Free parking · No facilities · Self-registration wilderness permit at trailhead (free)
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Hike</div>
+        <div class="section-content">
+          <strong>Shining Rock Loop from Black Balsam Road</strong> — 19.3 miles total, rated Hard<br>
+          <a href="https://www.alltrails.com/trail/us/north-carolina/shining-rock-loop-from-black-balsam-road" target="_blank">AllTrails Link ↗</a><br>
+          Route: Art Loeb Trail over Black Balsam Knob (6,214 ft) → Tennent Mountain → Old Butt Knob → Shining Rock → Ivestor Gap → back to FSR 816<br><br>
+          <span class="tbd-item">⚠ Daily mileage breakdown TBD</span><br>
+          <span class="tbd-item">⚠ Night 1 campsite location TBD</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Key Rules</div>
+        <div class="section-content">
+          • No campfires anywhere in Shining Rock Wilderness — stove only<br>
+          • No blazes — download offline map before leaving cell service (Gaia GPS or AllTrails offline)<br>
+          • Bear canisters required in Pisgah Ranger District<br>
+          • Camp at least 1,000 ft from any trail
+        </div>
+      </div>
+      <div class="warning-box">⚠ Trail has real storm damage from Tropical Storm Fred (2021) — one sketchy section on Shining Creek Trail ~1.5 miles from road. Passable but scrambly. Recent reports say conditions haven't worsened since Helene.</div>
+    </div>
+  </div>
+
+  <!-- DAY 6 -->
+  <div class="day-card trail" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">6</div>
+        <div>
+          <div class="day-title">Shining Rock Loop — Night 2 On Trail</div>
+          <div class="day-date">Thursday, September 17, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-tbd">⚠ Needs Planning</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Overnight</div>
+        <div class="section-content">
+          On trail — Shining Rock Wilderness, Pisgah National Forest<br>
+          <span class="tbd-item">⚠ Night 2 campsite location TBD</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Next Morning</div>
+        <div class="section-content">
+          Finish loop, return to FSR 816 trailhead. Drive ~1 hr 15 min southwest to Panthertown/Gorges area.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 7 -->
+  <div class="day-card booked" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">7</div>
+        <div>
+          <div class="day-title">Finish Loop · Drive to Panthertown · Gorges State Park</div>
+          <div class="day-date">Friday, September 18, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-booked">✓ Booked</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Morning</div>
+        <div class="section-content">
+          Hike out of Shining Rock, return to FSR 816 trailhead. Drive ~1 hr 15 min to Gorges/Panthertown area.
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Afternoon</div>
+        <div class="section-content">
+          Optional short hike in Panthertown — west entrance (Salt Rock Gap off Breedlove Rd near Cashiers) to avoid overlapping Day 8 route.<br><br>
+          <span class="tbd-item">⚠ Afternoon hike route TBD</span><br><br>
+          Options: Salt Rock Gap overlook (~0.5 mi RT) or Frolictown Falls/Granny Burrell Falls via Great Wall Trail (~3–4 mi)
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Overnight</div>
+        <div class="section-content">
+          <strong>Gorges State Park — Site 005, Family Campground</strong><br>
+          Sapphire, NC (Transylvania County)<br>
+          <span class="confirmed-item">✓ Reserved: Sept 18 (1 night) — $30 total</span><br>
+          Check-in: 3:00 PM · Check-out: 12:00 PM<br>
+          Amenities: Showers, flush toilets, fire rings, potable water<br>
+          No day-use entrance fee at Gorges State Park
+        </div>
+      </div>
+      <div class="note-box">🐻 Bear country — all food must be stored in vehicle or bear-proof container. No bear bags.</div>
+    </div>
+  </div>
+
+  <!-- DAY 8 -->
+  <div class="day-card tbd" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">8</div>
+        <div>
+          <div class="day-title">Full Day at Panthertown Valley · Hotel Night</div>
+          <div class="day-date">Saturday, September 19, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-tbd">⚠ Needs Planning</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Hike</div>
+        <div class="section-content">
+          <strong>Panthertown Valley</strong> — "Yosemite of the East"<br>
+          6,300 acres · 25+ miles of trails · Granite domes · Waterfalls<br>
+          East entrance: Cold Mountain Gap trailhead<br><br>
+          <span class="tbd-item">⚠ Day hike route TBD</span><br><br>
+          Suggested: Mac's Gap Loop (~5.6 mi) — hits Schoolhouse Falls, Little Green Mountain views, Greenland Creek Falls, Tranquility Point
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Evening</div>
+        <div class="section-content">
+          Hotel near Cashiers or Highlands — shower, real bed, cold beer 🍺<br><br>
+          <span class="tbd-item">⚠ Hotel TBD — pending group decision</span>
+        </div>
+      </div>
+      <div class="note-box">📍 No potable water or restrooms in Panthertown — carry all water or filter from streams. Download a dedicated Panthertown map before entering — many unofficial trails. Friends of Panthertown map recommended: panthertown.org</div>
+    </div>
+  </div>
+
+  <!-- DAY 9 -->
+  <div class="day-card pending" onclick="toggle(this)">
+    <div class="day-header">
+      <div class="day-label">
+        <div class="day-number">9</div>
+        <div>
+          <div class="day-title">Breakfast · Leisure · Drive Home</div>
+          <div class="day-date">Sunday, September 20, 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-badge badge-pending">→ Drive Home</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="day-body">
+      <div class="section">
+        <div class="section-title">Morning</div>
+        <div class="section-content">
+          Breakfast somewhere local in Cashiers or Highlands. Leisure. Maybe a brewery for lunch before heading out.
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Drive Home</div>
+        <div class="section-content">
+          <div class="info-grid">
+            <div>
+              <div class="label">Leg 1</div>
+              <div class="value">Cashiers/Gorges → Lavonia, GA</div>
+            </div>
+            <div>
+              <div class="label">Distance / Time</div>
+              <div class="value">~60 miles · ~1 hr 15 min</div>
+            </div>
+            <div>
+              <div class="label">Leg 2</div>
+              <div class="value">Lavonia, GA → Lexington, GA 30648</div>
+            </div>
+            <div>
+              <div class="label">Distance / Time</div>
+              <div class="value">~47 miles · ~57 min</div>
+            </div>
+            <div>
+              <div class="label">Total</div>
+              <div class="value">~107 miles · ~2 hrs 15 min</div>
+            </div>
+            <div>
+              <div class="label">Route</div>
+              <div class="value">SC-11 → I-85 S → GA-17 → GA-281</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHECKLIST -->
+<div class="checklist-section">
+  <div class="checklist-card">
+    <h2>📋 Outstanding Items Checklist</h2>
+
+    <div class="checklist-group">
+      <h3>🔐 Logistics & Bookings</h3>
+      <div class="checklist-item">
+        <input type="checkbox" id="c1">
+        <label for="c1">Call Grayson Highlands State Park (276-579-7092) — confirm if backpack parking reservation includes the ~$10 Sunday entrance fee</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c2">
+        <label for="c2">Decide on Saturday night hotel (Day 8) near Cashiers/Highlands — pending group decision</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c3">
+        <label for="c3">Check Creeper Trail Campground confirmation for any fees due on arrival</label>
+      </div>
+    </div>
+
+    <div class="checklist-group">
+      <h3>🗺️ Trail Planning — Grayson Highlands (Days 2–3)</h3>
+      <div class="checklist-item">
+        <input type="checkbox" id="c4">
+        <label for="c4">Map out daily mileage breakdown for 19.7-mile Mount Rogers Loop</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c5">
+        <label for="c5">Identify Night 1 campsite location (on USFS land past park boundary)</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c6">
+        <label for="c6">Identify Night 2 campsite location</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c7">
+        <label for="c7">Download offline map — Avenza app + Grayson Highlands map, or Nat Geo Trails Illustrated #318</label>
+      </div>
+    </div>
+
+    <div class="checklist-group">
+      <h3>🗺️ Trail Planning — Shining Rock (Days 5–6)</h3>
+      <div class="checklist-item">
+        <input type="checkbox" id="c8">
+        <label for="c8">Map out daily mileage breakdown for 19.3-mile Shining Rock Loop</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c9">
+        <label for="c9">Identify Night 1 campsite location</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c10">
+        <label for="c10">Identify Night 2 campsite location</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c11">
+        <label for="c11">Download offline map — Gaia GPS or AllTrails offline (no blazes in Wilderness)</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c12">
+        <label for="c12">Confirm trail conditions / any Helene-related closures — call Pisgah Ranger District (828) 877-3265</label>
+      </div>
+    </div>
+
+    <div class="checklist-group">
+      <h3>🥾 Panthertown (Days 7–8)</h3>
+      <div class="checklist-item">
+        <input type="checkbox" id="c13">
+        <label for="c13">Pick Day 7 afternoon arrival hike — west entrance (Salt Rock Gap), different from Day 8 route</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c14">
+        <label for="c14">Finalize Day 8 full day hike route (Mac's Gap Loop suggested)</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c15">
+        <label for="c15">Download Panthertown map — panthertown.org</label>
+      </div>
+    </div>
+
+    <div class="checklist-group">
+      <h3>🎒 Gear</h3>
+      <div class="checklist-item">
+        <input type="checkbox" id="c16">
+        <label for="c16">Bear canisters — required in Pisgah Ranger District (Shining Rock). Purchase or rent before trip.</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="c17">
+        <label for="c17">Confirm everyone has a stove — no campfires on either backpacking loop</label>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Trip: September 12–20, 2026 · Grayson Highlands, VA → Pisgah, NC → Panthertown, NC → Lexington, GA
+</footer>
+
+<script>
+  function toggle(card) {
+    card.classList.toggle('open');
+  }
+  // Open Day 1 by default
+  document.querySelector('.day-card').classList.add('open');
+</script>
+
+</body>
+</html>
